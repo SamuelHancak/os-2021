@@ -7,8 +7,16 @@ main()
 {
   int to_parent[2], to_child[2];
 
-  pipe(to_parent);
-  pipe(to_child);
+  // handling of pipes opening
+  if(pipe(to_parent) < 0){
+      printf("pipe \"to_parent\" failed\n");
+      exit(-1);
+  }
+
+  if(pipe(to_child) < 0){
+      printf("pipe \"to_child\" failed\n");
+      exit(-1);
+  }
 
   int pid = fork();
 
