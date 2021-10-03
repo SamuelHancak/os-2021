@@ -32,24 +32,24 @@ find(char *path, char *targetname)
 
 	if(fd < 0){
 		fprintf(2, "find: cannot open [%s], fd=%d\n", path, fd);
-		return -1;
+		return;
 	}
 
 	if(fstat(fd, &st) < 0){
 		fprintf(2, "find: cannot stat %s\n", path);
 		close(fd);
-		return -1;
+		return;
 	}
 
 	if(st.type != T_DIR){
 		close(fd);
-		return 0;
+		return;
 	}
 	
 	if(strlen(path) + 1 + DIRSIZ + 1 > sizeof buf){
 		printf("find: path too long\n");
 		close(fd);
-		return 0;
+		return;
 	}
 
 	strcpy(buf, path);
