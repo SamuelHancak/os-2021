@@ -9,8 +9,8 @@ fmtname(char *path)
 {
 	char *p;
 
-	// looking for the first character after the last slash
-	for(p=path+strlen(path); p >= path && *p != '/'; p--);
+	// looking for the first character after last slash
+	for(p = path + strlen(path); p >= path && *p != '/'; p--);
 	p++;
 
 	return p;
@@ -32,34 +32,35 @@ find(char *path, char *targetname)
 
 	if(fd < 0){
 		fprintf(2, "find: cannot open [%s], fd=%d\n", path, fd);
-		return;
+		return -1;
 	}
 
 	if(fstat(fd, &st) < 0){
 		fprintf(2, "find: cannot stat %s\n", path);
 		close(fd);
-		return;
+		return -1;
 	}
 
 	if(st.type != T_DIR){
 		close(fd);
-		return;
+		return 0;
 	}
 	
 	if(strlen(path) + 1 + DIRSIZ + 1 > sizeof buf){
 		printf("find: path too long\n");
 		close(fd);
-		return;
+		return 0;
 	}
 
 	strcpy(buf, path);
-	p = buf+strlen(buf);
+	p = buf + strlen(buf);
 	*p++ = '/';
 
 	while(read(fd, &de, sizeof(de)) == sizeof(de)){
 		if(de.inum == 0)
 			continue;
 
+		// writing to 'p' from 'de.name'
 		memmove(p, de.name, DIRSIZ);
 		p[DIRSIZ] = 0;
 		
