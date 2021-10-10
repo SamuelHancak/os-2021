@@ -8,7 +8,8 @@
 
 // Returns current system info
 int
-systeminfo(uint64 addr) {
+systeminfo(uint64 addr)
+{
   // getting the current proc
   struct proc *p = myproc();
   struct sysinfo info;
@@ -21,5 +22,6 @@ systeminfo(uint64 addr) {
   // copying from kernel to user
   if(copyout(p->pagetable, addr, (char *)&info, sizeof(info)) < 0)
     return -1;
+
   return 0;
 }

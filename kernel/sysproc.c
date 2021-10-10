@@ -104,6 +104,7 @@ sys_trace(void)
   if(argint(0, &mask) < 0)
     return -1;
   myproc()->trace_mask = mask;
+  
   return 0;
 }
 
@@ -114,5 +115,6 @@ sys_sysinfo(void)
 
   if(argaddr(0, &info) < 0)
     return -1;
+
   return systeminfo(info);
 }
