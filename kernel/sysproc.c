@@ -75,15 +75,45 @@ sys_sleep(void)
   return 0;
 }
 
-
-#ifdef LAB_PGTBL
 int
 sys_pgaccess(void)
-{
-  // lab pgtbl: your code here.
-  return 0;
+{  
+  uint64 start; // Page address
+  uint64 bitmask_user_address; // Bitmask address
+  int npages;  // Number of pages
+   
+  uint64 bitmask_kernel = 0 ; // Bitmask
+ 
+  if(argaddr(0, &start) < 0 || argint(1, &npages) < 0 || argaddr(2, &bitmask_user_address) < 0)
+    return -1;
+
+  // Checking max count of pages
+  if (npages > sizeof(int)*8) 
+    npages = sizeof(int)*8;
+ 
+  // Looping throught all pages
+  for(int i=0; i<npages; i++){
+    pte_t *pte = walk(myproc()->pagetable, start, 0);
+
+    if(*pte == 0)
+      return -1;
+
+    if((*pte & PTE_V) == 0)
+      return -1;
+
+    if((*pte & PTE_U) == 0)
+      return -1;  
+
+    if(*pte & PTE_A){  
+      bitmask_kernel |= 1L << i;
+      *pte &= ~PTE_A;
+    }
+
+    start += PGSIZE;
+  }
+  
+  return copyout(myproc()->pagetable, bitmask_user_address, (char *) &bitmask_kernel, sizeof(uint64)); // Copy of the output mask
 }
-#endif
 
 uint64
 sys_kill(void)
