@@ -132,3 +132,19 @@ printfinit(void)
   initlock(&pr.lock, "pr");
   pr.locking = 1;
 }
+
+void
+backtrace(void)
+{
+  uint64 fp = r_fp(); // read the current frame pointer
+  uint64 top_fp = PGROUNDUP(fp); // calculation of the top address of the stack page
+  uint64 return_addr;
+
+  printf("backtrace:\n");
+
+  while(fp < top_fp){
+    return_addr = *(uint64*)(fp-8); // fixed return address offset from stack frame pointer
+    fp = *(uint64*)(fp-16); // fixed saved frame pointer offset
+    printf("%p\n", return_addr);
+  }
+}
