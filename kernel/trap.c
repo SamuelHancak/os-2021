@@ -82,6 +82,7 @@ usertrap(void)
       p->alarm_trapframe = *p->trapframe;
       p->trapframe->epc = (uint64)p->handler;
     }
+    yield();
   }
   usertrapret();
 }
