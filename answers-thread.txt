@@ -1,0 +1,4 @@
+Pri jedno-vlaknovom systeme pouzivame rovnake kluce, tym padom neprichadza k prepisaniu dat. 
+Naopak pri viac-vlaknovych systemoch (v tomto pripade dvoj-vlaknovom), pouzivame odlisne kluce,
+dochadza k prepisaniu dat a tym dochadza k strate udajov. Preto je pri viac-vlaknovych systemoch
+potrebne uzamykanie narozdiel od jedno-vlaknovych.
