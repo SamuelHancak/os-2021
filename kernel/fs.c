@@ -399,6 +399,34 @@ bmap(struct inode *ip, uint bn)
     }
     brelse(bp);
     return addr;
+  }else{
+    bn -= NINDIRECT;
+    // check if secondary table exists, if no allocate one
+    uint dublyIndirect;
+    if((dublyIndirect = ip->addrs[NDIRECT+1]) == 0){
+      dublyIndirect = ip->addrs[NDIRECT+1] = balloc(ip->dev);
+    }
+    // read secondary table
+    bp = bread(ip->dev,dublyIndirect);
+    a = (uint*)bp->data;
+    // calculate the index corresponding to the first level table, then take the first level 
+    uint singlyIndirect = bn/NINDIRECT;
+    if((addr = a[singlyIndirect]) == 0){
+      addr = a[singlyIndirect] = balloc(ip->dev);
+      log_write(bp);
+    }
+
+    brelse(bp);
+    struct buf *p = bread(ip->dev,a[singlyIndirect]);
+    int i = bn%NINDIRECT;
+    a = (uint*)p->data;
+    if((addr = a[i]) == 0){
+      addr = a[i] = balloc(p->dev);
+      log_write(p);
+    }
+    brelse(p);
+
+    return addr;
   }
 
   panic("bmap: out of range");
@@ -430,6 +458,31 @@ itrunc(struct inode *ip)
     brelse(bp);
     bfree(ip->dev, ip->addrs[NDIRECT]);
     ip->addrs[NDIRECT] = 0;
+  }
+
+  if(ip->addrs[NDIRECT+1]){
+    // read secondary table
+    bp = bread(ip->dev, ip->addrs[NDIRECT+1]);
+    a = (uint*)bp->data;
+    for(j = 0; j < NINDIRECT; j++){
+      // a[j] is the address of the first level table
+      if(a[j]){
+        struct buf *p = bread(ip->dev,a[j]);
+        uint *c = (uint*)p->data;
+        for(int k = 0; k < NINDIRECT; k++){
+          if(c[k]){
+            bfree(p->dev,c[k]);
+          }
+        }
+
+        brelse(p);
+        bfree(bp->dev,a[j]);
+      }
+    }
+    
+    brelse(bp);
+    bfree(ip->dev, ip->addrs[NDIRECT+1]);
+    ip->addrs[NDIRECT+1] = 0;
   }
 
   ip->size = 0;
