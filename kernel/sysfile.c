@@ -283,6 +283,37 @@ create(char *path, short type, short major, short minor)
   return ip;
 }
 
+struct inode *
+symfollow(struct inode * ip)
+{
+  int symlinks = 1;
+  struct inode *t;
+  while(1){
+    t = namei(ip->target);
+
+    if(t == 0){
+      iunlock(ip);
+      return 0;
+    }
+
+    iunlock(ip);
+    ilock(t);
+
+    if(t->type != T_SYMLINK){
+      break;
+    }
+
+    ip = t;
+    symlinks++;
+
+    if(symlinks > 10){
+      return 0;
+    }
+  }
+
+  return t;
+}
+
 uint64
 sys_open(void)
 {
@@ -313,6 +344,15 @@ sys_open(void)
       iunlockput(ip);
       end_op();
       return -1;
+    }
+
+    if(ip->type == T_SYMLINK && (omode & O_NOFOLLOW) == 0){
+      ip = symfollow(ip);
+      
+      if(ip == 0){
+        end_op();
+        return -1;
+      }
     }
   }
 
@@ -482,5 +522,37 @@ sys_pipe(void)
     fileclose(wf);
     return -1;
   }
+  return 0;
+}
+
+int 
+sys_symlink(void)
+{
+  char target[MAXPATH],path[MAXPATH];
+
+  // create a link file at the location specified by path pointing to target 
+  if((argstr(0,target,MAXPATH)<0)||(argstr(1,path,MAXPATH)<0)){
+    return -1;
+  }
+
+  struct inode *ip;
+  begin_op();
+  // the returned ip is still locked and should be unlocked after the operation is completed
+  if((ip = (create(path,T_SYMLINK,0,0))) == 0){
+    end_op();
+    return -1;
+  }
+
+  int l = strlen(target);
+
+  if(l > MAXPATH){
+    l = MAXPATH;
+  }
+
+  memset(ip->target,0,MAXPATH);
+  memmove(ip->target,target,l);
+  iunlockput(ip);
+  end_op();
+
   return 0;
 }
